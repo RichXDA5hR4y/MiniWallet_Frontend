@@ -13,13 +13,17 @@ const Navbar = () => {
 
   return (
     <nav className="bg-gradient-to-r from-primary-600 to-primary-700 shadow-lg">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center">
-            <span className="text-white text-xl font-bold flex items-center">
-              <span className="mr-2">💰</span>
-              Mini Wallet
-            </span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between h-16">
+        {/* POLES: Tambahkan cursor-pointer dan navigate */}
+        <div 
+          className="flex items-center cursor-pointer hover:opacity-80 transition-opacity" 
+          onClick={() => navigate('/dashboard')}
+        >
+          <span className="text-white text-xl font-bold flex items-center">
+            <span className="mr-2">💰</span>
+            Mini Wallet
+          </span>
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-white text-sm hidden sm:block">

@@ -24,7 +24,6 @@ const Dashboard = () => {
   const [topupError, setTopupError] = useState('');
   const [transferError, setTransferError] = useState('');
 
-  // FIX #1: Wrap fetchDashboardData in useCallback
   const fetchDashboardData = useCallback(async () => {
     setLoading(true);
     try {
@@ -44,16 +43,14 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [updateUserBalance]); // FIX #1: Add dependency
+  }, [updateUserBalance]);
 
-  // FIX #2: Add fetchDashboardData to useEffect dependency
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
 
-  // FIX #2: Add fetchDashboardData to useEffect dependency
   useEffect(() => {
     if (isAuthenticated) {
       fetchDashboardData();
@@ -65,53 +62,31 @@ const Dashboard = () => {
   };
 
   const validateTopup = (amount) => {
-    if (!amount || amount === '') {
-      return 'Nominal tidak boleh kosong.';
-    }
-    if (isNaN(amount) || !Number.isInteger(Number(amount))) {
-      return 'Nominal harus berupa angka.';
-    }
-    if (Number(amount) <= 0) {
-      return 'Nominal tidak boleh negatif atau nol.';
-    }
-    if (Number(amount) > 10000000) {
-      return 'Nominal melebihi batas maksimum transaksi.';
-    }
+    if (!amount || amount === '') return 'Nominal tidak boleh kosong.';
+    if (isNaN(amount) || !Number.isInteger(Number(amount))) return 'Nominal harus berupa angka.';
+    if (Number(amount) <= 0) return 'Nominal tidak boleh negatif atau nol.';
+    if (Number(amount) > 10000000) return 'Nominal melebihi batas maksimum transaksi.';
     return '';
   };
 
   const validateTransfer = (target, amount) => {
-    if (!target || target === '') {
-      return 'Target penerima tidak boleh kosong.';
-    }
-    if (!amount || amount === '') {
-      return 'Nominal tidak boleh kosong.';
-    }
-    if (isNaN(amount) || !Number.isInteger(Number(amount))) {
-      return 'Nominal harus berupa angka.';
-    }
-    if (Number(amount) <= 0) {
-      return 'Nominal tidak boleh negatif atau nol.';
-    }
-    if (Number(amount) > 10000000) {
-      return 'Nominal melebihi batas maksimum transaksi.';
-    }
-    if (balance !== null && Number(amount) > balance) {
-      return 'Saldo tidak mencukupi.';
-    }
+    if (!target || target === '') return 'Target penerima tidak boleh kosong.';
+    if (!amount || amount === '') return 'Nominal tidak boleh kosong.';
+    if (isNaN(amount) || !Number.isInteger(Number(amount))) return 'Nominal harus berupa angka.';
+    if (Number(amount) <= 0) return 'Nominal tidak boleh negatif atau nol.';
+    if (Number(amount) > 10000000) return 'Nominal melebihi batas maksimum transaksi.';
+    if (balance !== null && Number(amount) > balance) return 'Saldo tidak mencukupi.';
     return '';
   };
 
   const handleTopup = async (e) => {
     e.preventDefault();
     setTopupError('');
-    
     const validationError = validateTopup(topupAmount);
     if (validationError) {
       setTopupError(validationError);
       return;
     }
-
     setProcessing(true);
     try {
       const response = await walletAPI.topup(Number(topupAmount));
@@ -121,9 +96,7 @@ const Dashboard = () => {
       setTopupAmount('');
       fetchDashboardData();
     } catch (error) {
-      const errorMsg = error.response?.data?.errors?.amount?.[0] || 
-                      error.response?.data?.message || 
-                      'Top up gagal.';
+      const errorMsg = error.response?.data?.errors?.amount?.[0] || error.response?.data?.message || 'Top up gagal.';
       setTopupError(errorMsg);
       setAlert({ type: 'error', message: errorMsg });
     } finally {
@@ -134,13 +107,11 @@ const Dashboard = () => {
   const handleTransfer = async (e) => {
     e.preventDefault();
     setTransferError('');
-    
     const validationError = validateTransfer(transferTarget, transferAmount);
     if (validationError) {
       setTransferError(validationError);
       return;
     }
-
     setProcessing(true);
     try {
       const response = await walletAPI.transfer(transferTarget, Number(transferAmount));
@@ -151,9 +122,7 @@ const Dashboard = () => {
       setTransferAmount('');
       fetchDashboardData();
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 
-                      error.response?.data?.errors?.amount?.[0] ||
-                      'Transfer gagal.';
+      const errorMsg = error.response?.data?.message || error.response?.data?.errors?.amount?.[0] || 'Transfer gagal.';
       setTransferError(errorMsg);
       setAlert({ type: 'error', message: errorMsg });
     } finally {
@@ -189,13 +158,27 @@ const Dashboard = () => {
           />
         )}
 
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 mb-8 text-white">
+        {/* POLES: Added card-hover class */}
+        <div className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl shadow-xl p-8 mb-8 text-white card-hover">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-primary-100 text-sm font-medium mb-2">Saldo Anda</p>
-              <h1 className="text-4xl sm:text-5xl font-bold">
-                {formatRupiah(balance)}
-              </h1>
+              <div className="flex items-center">
+                <h1 className="text-4xl sm:text-5xl font-bold">
+                  {formatRupiah(balance)}
+                </h1>
+                {/* POLES: Tombol Refresh Manual */}
+                <button 
+                  onClick={fetchDashboardData} 
+                  disabled={loading || processing}
+                  className="ml-4 p-2 bg-white bg-opacity-20 rounded-full hover:bg-opacity-30 transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-opacity-50"
+                  title="Perbarui Saldo"
+                >
+                  <svg className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                </button>
+              </div>
             </div>
             <div className="hidden sm:block">
               <div className="bg-white bg-opacity-20 rounded-full p-4">
@@ -206,7 +189,8 @@ const Dashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          {/* POLES: Added card-hover class to Top Up Card */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
             <div className="bg-gradient-to-r from-success-500 to-success-600 px-6 py-4">
               <h3 className="text-white font-semibold text-lg flex items-center">
                 <span className="mr-2">💵</span>
@@ -229,7 +213,6 @@ const Dashboard = () => {
                       value={topupAmount}
                       onChange={(e) => setTopupAmount(e.target.value)}
                       disabled={processing}
-                      min="1"
                       className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-success-500 focus:border-success-500 transition-all duration-200 ${
                         topupError ? 'border-danger-500 bg-danger-50' : 'border-gray-300'
                       }`}
@@ -242,9 +225,6 @@ const Dashboard = () => {
                       {topupError}
                     </p>
                   )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    Maksimal Rp 10.000.000 per transaksi
-                  </p>
                 </div>
                 <button
                   type="submit"
@@ -266,7 +246,8 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          {/* POLES: Added card-hover class to Transfer Card */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
             <div className="bg-gradient-to-r from-warning-500 to-warning-600 px-6 py-4">
               <h3 className="text-white font-semibold text-lg flex items-center">
                 <span className="mr-2">💸</span>
@@ -303,7 +284,6 @@ const Dashboard = () => {
                       value={transferAmount}
                       onChange={(e) => setTransferAmount(e.target.value)}
                       disabled={processing}
-                      min="1"
                       className={`w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-warning-500 focus:border-warning-500 transition-all duration-200 ${
                         transferError ? 'border-danger-500 bg-danger-50' : 'border-gray-300'
                       }`}
@@ -316,9 +296,6 @@ const Dashboard = () => {
                       {transferError}
                     </p>
                   )}
-                  <p className="mt-2 text-xs text-gray-500">
-                    Maksimal Rp 10.000.000 per transaksi
-                  </p>
                 </div>
                 <button
                   type="submit"
@@ -341,7 +318,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        {/* POLES: Added card-hover class to History Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden card-hover">
           <div className="bg-gradient-to-r from-primary-600 to-primary-700 px-6 py-4">
             <h3 className="text-white font-semibold text-lg flex items-center">
               <span className="mr-2">📋</span>
@@ -353,25 +331,16 @@ const Dashboard = () => {
               <div className="text-center py-12">
                 <div className="text-6xl mb-4">📭</div>
                 <p className="text-gray-500 text-lg font-medium">Belum ada riwayat transaksi</p>
-                <p className="text-gray-400 text-sm mt-1">Lakukan top up atau transfer untuk melihat riwayat</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tanggal
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tipe
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Keterangan
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Jumlah
-                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tipe</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -381,26 +350,13 @@ const Dashboard = () => {
                           {formatDate(trx.created_at)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                              trx.type === 'credit'
-                                ? 'bg-success-50 text-success-600'
-                                : 'bg-danger-50 text-danger-600'
-                            }`}
-                          >
+                          <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${trx.type === 'credit' ? 'bg-success-50 text-success-600' : 'bg-danger-50 text-danger-600'}`}>
                             {trx.type === 'credit' ? '↑ Masuk' : '↓ Keluar'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {trx.description}
-                        </td>
-                        <td
-                          className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${
-                            trx.type === 'credit' ? 'text-success-600' : 'text-danger-600'
-                          }`}
-                        >
-                          {trx.type === 'credit' ? '+' : '-'}
-                          {formatRupiah(trx.amount)}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{trx.description}</td>
+                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-semibold text-right ${trx.type === 'credit' ? 'text-success-600' : 'text-danger-600'}`}>
+                          {trx.type === 'credit' ? '+' : '-'}{formatRupiah(trx.amount)}
                         </td>
                       </tr>
                     ))}
